@@ -1180,8 +1180,8 @@ contract MasterChef is Ownable {
     // Add a new lp to the pool. Can only be called by the owner.
     // XXX DO NOT add the same LP token more than once. Rewards will be messed up if you do.
     function add(uint256 _allocPoint, IBEP20 _lpToken, uint16 _depositFeeBP, uint16 _withdrawFeeBP, bool _withUpdate) public onlyOwner {
-        require(_depositFeeBP <= 10000, "add: invalid deposit fee basis points");
-        require(_withdrawFeeBP <= 10000, "add: invalid withdraw fee basis points");
+        require(_depositFeeBP <= 500, "add: invalid deposit fee basis points");
+        require(_withdrawFeeBP <= 500, "add: invalid withdraw fee basis points");
         if (_withUpdate) {
             massUpdatePools();
         }
@@ -1199,8 +1199,8 @@ contract MasterChef is Ownable {
 
     // Update the given pool's AOF allocation point and deposit fee. Can only be called by the owner.
     function set(uint256 _pid, uint256 _allocPoint, uint16 _depositFeeBP, uint16 _withdrawFeeBP, bool _withUpdate) public onlyOwner {
-        require(_depositFeeBP <= 10000, "set: invalid deposit fee basis points");
-        require(_withdrawFeeBP <= 10000, "set: invalid withdraw fee basis points");
+        require(_depositFeeBP <= 500, "set: invalid deposit fee basis points");
+        require(_withdrawFeeBP <= 500, "set: invalid withdraw fee basis points");
         if (_withUpdate) {
             massUpdatePools();
         }
@@ -1290,18 +1290,13 @@ contract MasterChef is Ownable {
         uint256 pending = user.amount.mul(pool.accAofPerShare).div(1e12).sub(user.rewardDebt);
         if(pending > 0) {
             safeAofTransfer(msg.sender, pending);
-        }
+        }        
         if(_amount > 0) {
-            if(pool.withdrawFeeBP > 0){
-                uint256 withdrawFee = _amount.mul(pool.withdrawFeeBP).div(10000);
-                pool.lpToken.safeTransfer(feeAddress, withdrawFee);
-                uint256 remainamount = _amount.sub(withdrawFee);
-                pool.lpToken.safeTransfer(address(msg.sender), remainamount);
-            }else{
-                pool.lpToken.safeTransfer(feeAddress, _amount);
-            }
+            uint256 withdrawFee = _amount.mul(pool.withdrawFeeBP).div(10000);
             user.amount = user.amount.sub(_amount);
-            pool.lpToken.safeTransfer(address(msg.sender), _amount);
+            uint256 withdraw = _amount.sub(withdrawFee);
+            pool.lpToken.safeTransfer(feeAddress, withdrawFee);
+            pool.lpToken.safeTransfer(address(msg.sender), withdraw); 
         }
         user.rewardDebt = user.amount.mul(pool.accAofPerShare).div(1e12);
         emit Withdraw(msg.sender, _pid, _amount);
@@ -1341,6 +1336,7 @@ contract MasterChef is Ownable {
 
     function updateEmissionRate(uint256 _aofPerBlock) public onlyOwner {
         massUpdatePools();
+        require(_aofPerBlock<=30000000000000000000, "You cannot make AOF Per Block more than 30 AOF");
         aofPerBlock = _aofPerBlock;
     }
 }
